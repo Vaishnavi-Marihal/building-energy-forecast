@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+data/
+*.csv
+artifacts/
+notebooks/*.png
+frontend/node_modules/
+frontend/dist/
