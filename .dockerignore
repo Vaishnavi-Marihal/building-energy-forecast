@@ -1,0 +1,10 @@
+.git
+.venv
+**/node_modules
+frontend/dist
+data
+artifacts
+notebooks
+tests
+**/__pycache__
+*.pyc
