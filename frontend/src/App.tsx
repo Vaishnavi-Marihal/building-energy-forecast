@@ -144,7 +144,7 @@ export default function App() {
         </select>
         <input
           type="date"
-          className="rounded border p-2"
+          className="w-48 rounded border p-2"
           value={date}
           min={health.forecast_dates[0]}
           max={health.forecast_dates[1]}
