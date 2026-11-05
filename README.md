@@ -36,7 +36,15 @@ Every forecast is issued at 23:00 for the next day's 24 hours. Features use only
 - A leakage test: changing any data after the 23:00 issue time does not change any feature.
 - Baseline, interval and conformal tests with hand-checkable answers.
 - API tests for success, unknown building (404) and bad or out-of-range dates (422).
-- GitHub Actions runs all 23 tests on Python 3.9 and 3.12, plus the frontend lint and build.
+- A database test: features built from the 8-day window read from PostgreSQL must equal the features built from the whole history, including days with masked (NULL) hours.
+- 34 tests in total. The 22 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 12 always run.
+- GitHub Actions starts a PostgreSQL 16 service and runs all 34 tests on Python 3.9 and 3.12, plus the frontend lint and build.
+
+## Database
+
+Readings live in PostgreSQL, not in memory. `sql/schema.sql` defines two tables: `buildings` (id, site, the training-period mean load used as the scale) and `readings` (one row per building per hour; a masked hour is stored as NULL). The key `(building_id, ts)` also serves as the index, so a forecast request reads one building's 192 rows (the 7 days before the target day, plus the target day) instead of all 982,464.
+
+`src/load_db.py` fills both tables from `deploy/` and checks that, for every building, the SQL mean load before June 2017 equals the scale the model was trained with. Forecasts from this version were compared with the previous in-memory version on 280 building and date pairs, plus the error cases, and matched to within floating-point rounding (1e-9).
 
 ## Data and cleaning
 
@@ -63,14 +71,23 @@ Source: Building Data Genome Project 2 (1,636 buildings, hourly, 2016 to 2017). 
 
 ## Run locally
 
+With Docker (starts PostgreSQL, loads the data, then starts the app):
+
+```bash
+docker compose up --build
+```
+
+Then open http://127.0.0.1:8080. The loader recreates the tables on every start, which is fine for this demo database and not something to do to a real one. The database password in `compose.yaml` (`devpass`) is for local use only; override it with `POSTGRES_PASSWORD`.
+
+Tests (need a PostgreSQL server and an empty database whose name ends in `_test`):
+
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-python -m pytest tests -q
-docker build -t building-energy-forecast . && docker run --rm -p 8080:8000 building-energy-forecast
+TEST_DATABASE_URL=postgresql://postgres:devpass@localhost:5432/energy_test python -m pytest tests -q
 ```
 
-Then open http://127.0.0.1:8080.
+Without `TEST_DATABASE_URL` the 22 database tests are skipped and 12 run.
 
 ## Reproduce the results
 
@@ -78,7 +95,7 @@ With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python s
 
 ## Layout
 
-`src/` Python code (cleaning, features, baselines, uncertainty, API) · `tests/` · `notebooks/` data audit scripts · `frontend/` React + TypeScript dashboard · `deploy/` demo data, trained models and data notice · `Dockerfile`
+`src/` Python code (cleaning, features, baselines, uncertainty, API, database loader) · `sql/` database schema · `tests/` · `notebooks/` data audit scripts · `frontend/` React + TypeScript dashboard · `deploy/` demo data, trained models and data notice · `Dockerfile` · `compose.yaml`
 
 ## Data attribution
 
