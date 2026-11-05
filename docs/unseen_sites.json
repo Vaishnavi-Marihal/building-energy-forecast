@@ -1,0 +1,99 @@
+{
+  "summary": {
+    "n_sites": 14,
+    "median_seen_ratio_by_site": 0.677,
+    "median_unseen_ratio_by_site": 0.71,
+    "sites_beating_lag168_when_unseen": 12,
+    "worst_site_unseen": "Lamb",
+    "worst_site_unseen_ratio": 1.217,
+    "median_seen_ratio_by_building": 0.6819,
+    "median_unseen_ratio_by_building": 0.7014,
+    "buildings_beating_lag168_when_unseen": "48 of 56"
+  },
+  "per_site": [
+    {
+      "site": "Bear",
+      "buildings_scored": 4,
+      "seen_ratio": 0.655,
+      "unseen_ratio": 0.669
+    },
+    {
+      "site": "Bobcat",
+      "buildings_scored": 4,
+      "seen_ratio": 0.835,
+      "unseen_ratio": 0.864
+    },
+    {
+      "site": "Bull",
+      "buildings_scored": 4,
+      "seen_ratio": 0.625,
+      "unseen_ratio": 0.69
+    },
+    {
+      "site": "Cockatoo",
+      "buildings_scored": 4,
+      "seen_ratio": 0.737,
+      "unseen_ratio": 0.743
+    },
+    {
+      "site": "Eagle",
+      "buildings_scored": 4,
+      "seen_ratio": 0.726,
+      "unseen_ratio": 0.773
+    },
+    {
+      "site": "Fox",
+      "buildings_scored": 4,
+      "seen_ratio": 0.655,
+      "unseen_ratio": 0.664
+    },
+    {
+      "site": "Hog",
+      "buildings_scored": 4,
+      "seen_ratio": 0.675,
+      "unseen_ratio": 0.697
+    },
+    {
+      "site": "Lamb",
+      "buildings_scored": 4,
+      "seen_ratio": 0.927,
+      "unseen_ratio": 1.217
+    },
+    {
+      "site": "Moose",
+      "buildings_scored": 4,
+      "seen_ratio": 1.001,
+      "unseen_ratio": 1.114
+    },
+    {
+      "site": "Panther",
+      "buildings_scored": 4,
+      "seen_ratio": 0.615,
+      "unseen_ratio": 0.669
+    },
+    {
+      "site": "Peacock",
+      "buildings_scored": 4,
+      "seen_ratio": 0.704,
+      "unseen_ratio": 0.733
+    },
+    {
+      "site": "Rat",
+      "buildings_scored": 4,
+      "seen_ratio": 0.574,
+      "unseen_ratio": 0.583
+    },
+    {
+      "site": "Robin",
+      "buildings_scored": 4,
+      "seen_ratio": 0.624,
+      "unseen_ratio": 0.629
+    },
+    {
+      "site": "Wolf",
+      "buildings_scored": 4,
+      "seen_ratio": 0.68,
+      "unseen_ratio": 0.724
+    }
+  ]
+}
