@@ -27,6 +27,21 @@ A separate rolling backtest (6 monthly folds, retraining each month on earlier d
 | Buildings beating yesterday's value | 83.9% to 92.9% |
 | True values inside the 90% range | 87.5% to 91.3% |
 
+## Unseen sites
+
+How does the model do on a site it never saw in training? For each of the 14 sites, I trained on the other 13 sites (data through 31 May 2017) and forecast the held-out site's buildings for July to December 2017. A control model trained on all 56 buildings is scored on the same hours, so the only difference between the two columns is whether the site was in the training data. Reproduce with `python src/backtest_unseen_sites.py`; results are in `docs/unseen_sites.json`.
+
+| Measure (below 1 beats same hour last week) | Site in training | Unseen site |
+|---|---|---|
+| Median error ratio, by building | 0.682 | 0.701 |
+| Median of the 14 site medians | 0.677 | 0.710 |
+| Buildings beating last week's value | 52 of 56 | 48 of 56 |
+| Sites beating last week's value (site median below 1) | 13 of 14 | 12 of 14 |
+
+The model gets a little worse on unseen sites and still beats last week's value on most. Two sites do not beat it when unseen: Lamb (1.22, against 0.93 when seen) and Moose (1.11, against 1.00 when seen, so Moose is hard for this model even when its own data is in training). Lamb's four buildings are very small loads (about 3 to 44 kWh), which may matter, but I did not test that.
+
+How far to trust this: each site score is the median of only 4 buildings, and I used one random seed, so site-level differences of about 0.03 or less cannot be separated from noise. An unseen site still supplies its own recent readings as model inputs and its own mean load for scaling; only the model's training excludes it. The buildings were chosen with quality checks over the whole period (see Limitations).
+
 ## What it does
 
 Every forecast is issued at 23:00 for the next day's 24 hours. Features use only data available at that moment: the same hour 1, 2 and 7 days earlier, yesterday's mean, minimum and maximum, the last observed reading, the forecast horizon (1 to 24), weekday and month. One global LightGBM model serves all buildings, with each building's load divided by its training-period mean. The 90% range comes from 5th and 95th percentile models, widened by a split-conformal correction computed on the previous month.
@@ -62,7 +77,7 @@ Source: Building Data Genome Project 2 (1,636 buildings, hourly, 2016 to 2017). 
 ## Limitations
 
 - This is a replay of a past period, not a live service. Dates are limited to July–December 2017 because the models were trained on earlier data. Earlier dates would be in-sample and flatter the results.
-- 56 buildings from 14 sites. Buildings on one site share weather and behaviour, so the effective sample is closer to the number of sites. I did not test on held-out sites or other building types.
+- 56 buildings from 14 sites. Buildings on one site share weather and behaviour, so the effective sample is closer to the number of sites. Held-out sites are tested above (one seed); other building types and other years are not.
 - There is no holiday or school-calendar feature, only weekday and month. School breaks are a likely source of larger errors, but I have not measured this.
 - The 56 buildings were chosen using data-quality checks computed over the whole period, including the test months, which favours buildings with clean test data.
 - Scores use only hours where the actual value and both baseline values exist.
