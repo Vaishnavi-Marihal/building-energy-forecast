@@ -11,6 +11,6 @@ Original license: Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0), ht
 
 - Kept only the electricity meters of 56 buildings with primary space usage "Education" (up to 4 per site, 14 sites, chosen by random sampling with seed 0).
 - Readings that are zero or missing for more than 168 consecutive hours were set to missing.
-- The files in `model/` are LightGBM models trained on this modified data, plus evaluation numbers computed from them. They are shared under the same terms to be safe.
+- The files in `model/` are LightGBM models trained on this modified data, plus evaluation numbers computed from them. They are shared under the same terms to be safe. The file `docs/unseen_sites.json` also holds evaluation numbers computed from this data and is covered by the same terms.
 
 These files are shared under CC BY-SA 4.0. The source code in this repository is not covered by this notice.

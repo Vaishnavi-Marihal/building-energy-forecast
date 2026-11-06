@@ -116,3 +116,7 @@ With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python s
 
 Miller, C., Kathirgamanathan, A., Picchetti, B. et al. The Building Data Genome Project 2, energy meter data from the ASHRAE Great Energy Predictor III competition. Sci Data 7, 368 (2020). https://doi.org/10.1038/s41597-020-00712-x
 The data in `deploy/` is a modified subset, shared under CC BY-SA 4.0. See `deploy/NOTICE.md`.
+
+## Licence
+
+The source code is under the MIT licence (see `LICENSE`). The data and model files in `deploy/` are under CC BY-SA 4.0, as described above.
