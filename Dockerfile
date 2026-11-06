@@ -13,8 +13,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ src/
-COPY deploy/model/ artifacts/
-COPY deploy/dataset/education_clean.csv data/processed/education_clean.csv
+COPY sql/ sql/
+# deploy/ holds the demo readings, the trained models and the data notice.
+# The API reads the models from artifacts/; the loader reads the readings.
+COPY deploy/ deploy/
+RUN ln -s /app/deploy/model /app/artifacts
 COPY --from=frontend /app/frontend/dist frontend/dist
 ENV PYTHONPATH=/app/src
 EXPOSE 8000
