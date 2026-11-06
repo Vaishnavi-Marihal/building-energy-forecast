@@ -52,8 +52,8 @@ Every forecast is issued at 23:00 for the next day's 24 hours. Features use only
 - Baseline, interval and conformal tests with hand-checkable answers.
 - API tests for success, unknown building (404) and bad or out-of-range dates (422).
 - A database test: features built from the 8-day window read from PostgreSQL must equal the features built from the whole history, including days with masked (NULL) hours.
-- 40 tests in total. The 22 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 18 always run.
-- GitHub Actions starts a PostgreSQL 16 service and runs all 40 tests on Python 3.9 and 3.12, plus the frontend lint and build.
+- 45 tests in total. The 22 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 23 always run.
+- GitHub Actions starts a PostgreSQL 16 service and runs all 45 tests on Python 3.9 and 3.12, plus the frontend lint and build.
 
 ## Database
 
@@ -102,7 +102,7 @@ pip install -r requirements-dev.txt
 TEST_DATABASE_URL=postgresql://postgres:devpass@localhost:5432/energy_test python -m pytest tests -q
 ```
 
-Without `TEST_DATABASE_URL` the 22 database tests are skipped and 18 run.
+Without `TEST_DATABASE_URL` the 22 database tests are skipped and 23 run.
 
 ## Reproduce the results
 

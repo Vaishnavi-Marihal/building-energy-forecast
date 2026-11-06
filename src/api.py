@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import os
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Optional
@@ -13,6 +14,7 @@ from psycopg_pool import ConnectionPool
 from pydantic import BaseModel
 
 from features import build_features, FEATURES
+from logging_setup import get_logger
 from uncertainty import make_interval
 
 ART = Path("artifacts")
@@ -23,6 +25,7 @@ LAST_DATE = dt.date(2017, 12, 31)
 WINDOW_DAYS = 7                      # history needed before the target day (same hour last week)
 
 state = {}
+log = get_logger()
 
 
 def load_state(art=ART, database_url=None):
@@ -57,6 +60,23 @@ async def lifespan(app):
 
 app = FastAPI(title="Building Energy Day-Ahead Forecast", version="0.2.0",
               lifespan=lifespan)
+
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    """Write one JSON log line per request: method, path, status, milliseconds taken."""
+    start = time.perf_counter()
+    fields = {"method": request.method, "path": request.url.path}
+    try:
+        response = await call_next(request)
+    except Exception:
+        fields["ms"] = round((time.perf_counter() - start) * 1000, 1)
+        log.exception("request_failed", extra={"fields": fields})
+        raise
+    fields["status"] = response.status_code
+    fields["ms"] = round((time.perf_counter() - start) * 1000, 1)
+    log.info("request", extra={"fields": fields})
+    return response
 
 
 class HourForecast(BaseModel):
