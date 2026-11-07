@@ -52,8 +52,8 @@ Every forecast is issued at 23:00 for the next day's 24 hours. Features use only
 - Baseline, interval and conformal tests with hand-checkable answers.
 - API tests for success, unknown building (404) and bad or out-of-range dates (422).
 - A database test: features built from the 8-day window read from PostgreSQL must equal the features built from the whole history, including days with masked (NULL) hours.
-- 52 tests in total. The 25 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 27 always run.
-- GitHub Actions starts a PostgreSQL 16 service and runs all 52 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
+- 55 tests in total. The 25 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 30 always run.
+- GitHub Actions starts a PostgreSQL 16 service and runs all 55 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
 
 ## Database
 
@@ -67,7 +67,18 @@ Readings live in PostgreSQL, not in memory. `sql/schema.sql` defines three table
 
 I replayed forecasts for all 56 buildings on every fourth day from 2 July to 29 December 2017 (46 days, 2,576 forecasts) through the API, then ran `src/monitor.py` on the stored forecasts. Three days were flagged: 4 September, 23 November and 25 December. On all three, the median ratio to last week's value stayed below 1 (0.92, 0.68 and 0.70), so the model still beat last week's value. What fell short was interval coverage (0.77, 0.74 and 0.74, against the 0.90 the intervals are meant to reach and my flag limit of 0.80).
 
-These three dates are US public holidays (Labor Day, Thanksgiving, Christmas Day), and the model has no holiday information, only the hour, weekday and month. I have not tested whether holidays are the cause. Because I sampled every fourth day, other holidays may not have been checked. The data is a replay of 2017, so this shows how the monitoring works, not live production monitoring.
+These three dates are US public holidays (Labor Day, Thanksgiving, Christmas Day), and the model has no holiday information, only the hour, weekday and month. Whether holidays are the cause is tested in the next section. Because I sampled every fourth day, other holidays may not have been checked. The data is a replay of 2017, so this shows how the monitoring works, not live production monitoring.
+
+## Holiday flag experiment
+
+The monitoring above suggested that the model misses holidays. To test this, I trained the model twice with the same settings as the deployed one (data through May 2017, seeds 0, 1 and 2): once with the usual 10 features and once with one extra feature, `is_holiday` (US federal holidays, observed dates). I scored July to December 2017 separately on the 6 federal holidays in that period and on all other days, as the model's error relative to last week's value (median over buildings, below 1 is better).
+
+| | Without flag | With flag |
+|---|---|---|
+| Holiday days | 0.801 (0.801 to 0.810) | 0.637 (0.626 to 0.640) |
+| Other days | 0.671 (0.667 to 0.675) | 0.668 (0.668 to 0.671) |
+
+The ranges are the lowest and highest of the three seeds. The flag lowers the error on holidays and does not change the other days. Limits: only 6 holiday days and 3 seeds; I chose this experiment after seeing the flagged days in the same July to December period, so the evidence is weaker than if I had decided it beforehand; only the point forecast was tested, not the prediction intervals that the monitoring flagged; and the days next to holidays (for example the day after Thanksgiving) are in the "other days" group. The deployed model does not use the flag yet. Results are in `docs/holiday_experiment.json`; run `python src/experiment_holiday.py`.
 
 ## Data and cleaning
 
@@ -110,7 +121,7 @@ pip install -r requirements-dev.txt
 TEST_DATABASE_URL=postgresql://postgres:devpass@localhost:5432/energy_test python -m pytest tests -q
 ```
 
-Without `TEST_DATABASE_URL` the 25 database tests are skipped and 27 run.
+Without `TEST_DATABASE_URL` the 25 database tests are skipped and 30 run.
 
 ## Reproduce the results
 
@@ -118,7 +129,7 @@ With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python s
 
 ## Layout
 
-`src/` Python code (cleaning, features, baselines, uncertainty, API, database loader, logging, monitoring report, unseen-sites evaluation) · `sql/` database schema · `tests/` · `notebooks/` data audit scripts · `frontend/` React + TypeScript dashboard · `deploy/` demo data, trained models and data notice · `Dockerfile` · `compose.yaml`
+`src/` Python code (cleaning, features, baselines, uncertainty, API, database loader, logging, monitoring report, unseen-sites evaluation, holiday experiment) · `sql/` database schema · `tests/` · `notebooks/` data audit scripts · `frontend/` React + TypeScript dashboard · `deploy/` demo data, trained models and data notice · `Dockerfile` · `compose.yaml`
 
 ## Data attribution
 
