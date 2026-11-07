@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Query
 from psycopg_pool import ConnectionPool
 from pydantic import BaseModel
 
-from features import build_features, FEATURES
+from features import build_features, DEPLOYED_FEATURES
 from logging_setup import get_logger
 from uncertainty import make_interval
 
@@ -187,7 +187,7 @@ def forecast(building_id: str, date: dt.date = Query(..., description="YYYY-MM-D
     if len(day) != 24:
         raise HTTPException(status_code=500, detail="incomplete day in data")
 
-    X = day[FEATURES]
+    X = day[DEPLOYED_FEATURES]
     m = state["models"]
     pred = np.maximum(m["point"].predict(X), 0.0)
     lower, upper = make_interval(pred, m["lo"].predict(X), m["hi"].predict(X),

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import lightgbm as lgb
 
-from features import build_features, FEATURES
+from features import build_features, DEPLOYED_FEATURES
 from uncertainty import conformal_correction, make_interval
 
 ART = Path("artifacts")
@@ -29,15 +29,15 @@ test = feat[feat.index >= TEST_START].copy()
 BASE = dict(n_estimators=400, learning_rate=0.05, num_leaves=63,
             min_child_samples=100, subsample=0.8, subsample_freq=1,
             colsample_bytree=0.8, random_state=0, n_jobs=-1, verbose=-1)
-point = lgb.LGBMRegressor(objective="l1", **BASE).fit(train[FEATURES], train["y"])
+point = lgb.LGBMRegressor(objective="l1", **BASE).fit(train[DEPLOYED_FEATURES], train["y"])
 lo_m = lgb.LGBMRegressor(objective="quantile", alpha=ALPHA / 2, **BASE
-                         ).fit(train[FEATURES], train["y"])
+                         ).fit(train[DEPLOYED_FEATURES], train["y"])
 hi_m = lgb.LGBMRegressor(objective="quantile", alpha=1 - ALPHA / 2, **BASE
-                         ).fit(train[FEATURES], train["y"])
+                         ).fit(train[DEPLOYED_FEATURES], train["y"])
 
 # conformal correction from the calibration month
-lo_c = lo_m.predict(cal[FEATURES])
-hi_c = hi_m.predict(cal[FEATURES])
+lo_c = lo_m.predict(cal[DEPLOYED_FEATURES])
+hi_c = hi_m.predict(cal[DEPLOYED_FEATURES])
 lo_c, hi_c = np.minimum(lo_c, hi_c), np.maximum(lo_c, hi_c)
 yc = cal["y"].to_numpy()
 Q = conformal_correction(np.maximum(lo_c - yc, yc - hi_c), ALPHA)
@@ -52,16 +52,16 @@ meta = {
     "alpha": ALPHA,
     "train_end": "2017-05-31 23:00",
     "calibration_month": "2017-06",
-    "features": FEATURES,
+    "features": DEPLOYED_FEATURES,
     "buildings": [{"id": b, "site_id": str(sel.loc[b, "site_id"])}
                   for b in df.columns],
 }
 (ART / "meta.json").write_text(json.dumps(meta, allow_nan=False))
 
 # score July-December 2017, per building (fixed origin: trained through May)
-pred = np.maximum(point.predict(test[FEATURES]), 0.0)
-lower, upper = make_interval(pred, lo_m.predict(test[FEATURES]),
-                             hi_m.predict(test[FEATURES]), Q)
+pred = np.maximum(point.predict(test[DEPLOYED_FEATURES]), 0.0)
+lower, upper = make_interval(pred, lo_m.predict(test[DEPLOYED_FEATURES]),
+                             hi_m.predict(test[DEPLOYED_FEATURES]), Q)
 test["pred"], test["lower"], test["upper"] = pred, lower, upper
 
 v = test[test["y"].notna() & test["lag168"].notna() & test["lag24"].notna()].copy()

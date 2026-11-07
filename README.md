@@ -11,11 +11,11 @@ Day-ahead hourly electricity forecasts for 56 school buildings, with 90% predict
 
 | Measure | Result |
 |---|---|
-| Median error ratio vs same hour last week (below 1 is better) | 0.68 |
+| Median error ratio vs same hour last week (below 1 is better) | 0.67 |
 | Buildings where the model beats last week's value | 92.9% (52 of 56) |
-| True values inside the 90% range | 90.1% |
+| True values inside the 90% range | 90.0% |
 
-The dashboard shows this fixed-origin run: models trained through 31 May 2017, range calibrated on June 2017, scored on July to December 2017.
+The dashboard shows this fixed-origin run: models trained through 31 May 2017, range calibrated on June 2017, scored on July to December 2017. This is the deployed model, which includes a US federal holiday flag (see "Holiday flag experiment"); without the flag the same run gave 0.68 and 90.1%. The rolling backtest below and the unseen-sites results were produced with the 10 features that do not include the flag.
 
 A separate rolling backtest (6 monthly folds, retraining each month on earlier data, calibrating on the month before) gave:
 
@@ -44,7 +44,7 @@ How far to trust this: each site score is the median of only 4 buildings, and I 
 
 ## What it does
 
-Every forecast is issued at 23:00 for the next day's 24 hours. Features use only data available at that moment: the same hour 1, 2 and 7 days earlier, yesterday's mean, minimum and maximum, the last observed reading, the forecast horizon (1 to 24), weekday and month. One global LightGBM model serves all buildings, with each building's load divided by its training-period mean. The 90% range comes from 5th and 95th percentile models, widened by a split-conformal correction computed on the previous month.
+Every forecast is issued at 23:00 for the next day's 24 hours. Features use only data available at that moment: the same hour 1, 2 and 7 days earlier, yesterday's mean, minimum and maximum, the last observed reading, the forecast horizon (1 to 24), weekday, month and a flag for US federal holidays. One global LightGBM model serves all buildings, with each building's load divided by its training-period mean. The 90% range comes from 5th and 95th percentile models, widened by a split-conformal correction computed on the previous month.
 
 ## How it is tested
 
@@ -52,8 +52,8 @@ Every forecast is issued at 23:00 for the next day's 24 hours. Features use only
 - Baseline, interval and conformal tests with hand-checkable answers.
 - API tests for success, unknown building (404) and bad or out-of-range dates (422).
 - A database test: features built from the 8-day window read from PostgreSQL must equal the features built from the whole history, including days with masked (NULL) hours.
-- 57 tests in total. The 25 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 32 always run.
-- GitHub Actions starts a PostgreSQL 16 service and runs all 57 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
+- 61 tests in total. The 27 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 34 always run.
+- GitHub Actions starts a PostgreSQL 16 service and runs all 61 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
 
 ## Database
 
@@ -65,9 +65,9 @@ Readings live in PostgreSQL, not in memory. `sql/schema.sql` defines three table
 
 ## What monitoring showed
 
-I replayed forecasts for all 56 buildings on every fourth day from 2 July to 29 December 2017 (46 days, 2,576 forecasts) through the API, then ran `src/monitor.py` on the stored forecasts. Three days were flagged: 4 September, 23 November and 25 December. On all three, the median ratio to last week's value stayed below 1 (0.92, 0.68 and 0.70), so the model still beat last week's value. What fell short was interval coverage (0.77, 0.74 and 0.74, against the 0.90 the intervals are meant to reach and my flag limit of 0.80).
+I replayed forecasts for all 56 buildings on every fourth day from 2 July to 29 December 2017 (46 days, 2,576 forecasts) through the API, then ran `src/monitor.py` on the stored forecasts (this was the model without the holiday flag). Three days were flagged: 4 September, 23 November and 25 December. On all three, the median ratio to last week's value stayed below 1 (0.92, 0.68 and 0.70), so the model still beat last week's value. What fell short was interval coverage (0.77, 0.74 and 0.74, against the 0.90 the intervals are meant to reach and my flag limit of 0.80).
 
-These three dates are US public holidays (Labor Day, Thanksgiving, Christmas Day), and the model has no holiday information, only the hour, weekday and month. Whether holidays are the cause is tested in the next section. Because I sampled every fourth day, other holidays may not have been checked. The data is a replay of 2017, so this shows how the monitoring works, not live production monitoring.
+These three dates are US public holidays (Labor Day, Thanksgiving, Christmas Day), and the model at that time had no holiday information, only the hour, weekday and month. Whether holidays are the cause is tested in the next section. Because I sampled every fourth day, other holidays may not have been checked. The data is a replay of 2017, so this shows how the monitoring works, not live production monitoring.
 
 ## Holiday flag experiment
 
@@ -78,9 +78,11 @@ The monitoring above suggested that the model misses holidays. To test this, I t
 | Holiday days | 0.801 (0.801 to 0.810) | 0.637 (0.626 to 0.640) |
 | Other days | 0.671 (0.667 to 0.675) | 0.668 (0.668 to 0.671) |
 
-The ranges are the lowest and highest of the three seeds. The flag lowers the error on holidays and does not change the other days. Limits: only 6 holiday days and 3 seeds; I chose this experiment after seeing the flagged days in the same July to December period, so the evidence is weaker than if I had decided it beforehand; this first test covers only the point forecast (the intervals follow below); and the days next to holidays (for example the day after Thanksgiving) are in the "other days" group. The deployed model does not use the flag yet. Results are in `docs/holiday_experiment.json`; run `python src/experiment_holiday.py`.
+The ranges are the lowest and highest of the three seeds. The flag lowers the error on holidays and does not change the other days. Limits: only 6 holiday days and 3 seeds; I chose this experiment after seeing the flagged days in the same July to December period, so the evidence is weaker than if I had decided it beforehand; this first test covers only the point forecast (the intervals follow below); and the days next to holidays (for example the day after Thanksgiving) are in the "other days" group. The deployed model now uses the flag; the result is below. Results are in `docs/holiday_experiment.json`; run `python src/experiment_holiday.py`.
 
 I repeated the check for the prediction intervals with the same method as the deployed models (5% and 95% quantile models, correction calibrated on June 2017). On holiday days the share of hours inside the interval rose from 0.784 to 0.837 with the flag, still below the 0.90 the intervals are meant to reach. On other days it stayed at about 0.90 (0.905 without the flag, 0.902 with it). The intervals on holiday days became slightly wider (median width 0.326 to 0.334 of the building's mean load). The correction is calibrated on June, which has no federal holidays, so it may be too small for them; I have not tested this. Results are in `docs/holiday_intervals.json`; run `python src/experiment_holiday_intervals.py`.
+
+Adding the flag to the deployed model moved the fixed-origin run from 0.6819 to 0.6698 (median error ratio) and from 90.08% to 90.01% (coverage of the 90% range), with one seed. I then replayed the same 46 days through the API and ran the monitoring report again: no day was flagged (before: 3). On the three previously flagged holidays the median ratio went from 0.92, 0.68 and 0.70 to 0.68, 0.55 and 0.31, and the coverage from 0.77, 0.74 and 0.74 to 0.83, 0.84 and 0.81. Coverage on those days is still below 0.90 and only just above my flag limit of 0.80, so "not flagged" means improved, not fixed. These checks use the same July to December days that led me to the flag.
 
 ## Data and cleaning
 
@@ -99,7 +101,7 @@ Source: Building Data Genome Project 2 (1,636 buildings, hourly, 2016 to 2017). 
 
 - This is a replay of a past period, not a live service. Dates are limited to July–December 2017 because the models were trained on earlier data. Earlier dates would be in-sample and flatter the results.
 - 56 buildings from 14 sites. Buildings on one site share weather and behaviour, so the effective sample is closer to the number of sites. Held-out sites are tested above (one seed); other building types and other years are not.
-- There is no holiday or school-calendar feature, only weekday and month. School breaks are a likely source of larger errors, but I have not measured this.
+- The only calendar information is weekday, month and a US federal holiday flag; there is no school-calendar feature. School breaks (for example Christmas week or the day after Thanksgiving) are not flagged and are a likely source of larger errors, but I have not measured this.
 - The 56 buildings were chosen using data-quality checks computed over the whole period, including the test months, which favours buildings with clean test data.
 - Scores use only hours where the actual value and both baseline values exist.
 - The 90% guarantee of conformal prediction assumes the data behaves consistently over time, which energy data only roughly does.
@@ -123,11 +125,11 @@ pip install -r requirements-dev.txt
 TEST_DATABASE_URL=postgresql://postgres:devpass@localhost:5432/energy_test python -m pytest tests -q
 ```
 
-Without `TEST_DATABASE_URL` the 25 database tests are skipped and 32 run.
+Without `TEST_DATABASE_URL` the 27 database tests are skipped and 34 run.
 
 ## Reproduce the results
 
-With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python src/backtest_baselines.py`, `python src/backtest_model.py`, `python src/backtest_intervals.py`, `python src/backtest_weather.py`, `python src/train_final.py`.
+With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python src/backtest_baselines.py`, `python src/backtest_model.py`, `python src/backtest_intervals.py`, `python src/backtest_weather.py`, `python src/train_final.py` (it writes `artifacts/`; copy its five files into `deploy/model/` to update the demo model). `python src/backtest_unseen_sites.py`, `python src/experiment_holiday.py` and `python src/experiment_holiday_intervals.py` reproduce the unseen-sites and holiday results.
 
 ## Layout
 

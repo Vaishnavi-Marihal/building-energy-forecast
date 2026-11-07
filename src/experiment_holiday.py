@@ -13,20 +13,12 @@ from pathlib import Path
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from pandas.tseries.holiday import USFederalHolidayCalendar
 
 from backtest_unseen_sites import score_buildings, PARAMS, CAL_START, TEST_START
-from features import build_features, FEATURES
+from features import build_features, FEATURES, holiday_flag
 
 SEEDS = [0, 1, 2]
 MIN_HOURS = {"holiday days": 48, "other days": 120}   # the holiday group has only a few days
-
-
-def holiday_flag(index):
-    """1 for every hour on a US federal holiday (observed date), else 0."""
-    days = USFederalHolidayCalendar().holidays(start=index.min().normalize(),
-                                               end=index.max().normalize())
-    return np.asarray(index.normalize().isin(days), dtype=int)
 
 
 def main():
