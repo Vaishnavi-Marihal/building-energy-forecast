@@ -1,0 +1,41 @@
+{
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "results": [
+    {
+      "group": "holiday days",
+      "variant": "with holiday flag",
+      "coverage": 0.837,
+      "cov_low": 0.836,
+      "cov_high": 0.837,
+      "width": 0.334
+    },
+    {
+      "group": "holiday days",
+      "variant": "without holiday flag",
+      "coverage": 0.784,
+      "cov_low": 0.78,
+      "cov_high": 0.785,
+      "width": 0.326
+    },
+    {
+      "group": "other days",
+      "variant": "with holiday flag",
+      "coverage": 0.902,
+      "cov_low": 0.902,
+      "cov_high": 0.902,
+      "width": 0.262
+    },
+    {
+      "group": "other days",
+      "variant": "without holiday flag",
+      "coverage": 0.905,
+      "cov_low": 0.904,
+      "cov_high": 0.905,
+      "width": 0.266
+    }
+  ]
+}
