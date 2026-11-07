@@ -162,3 +162,28 @@ def test_window_with_missing_rows_is_rejected(env):
     with api.state["pool"].connection() as conn:
         with pytest.raises(ValueError):
             api.features_for_day(conn, "b1", 1.0, dt.date(2018, 3, 1))
+
+
+def test_served_forecast_is_recorded_once_per_hour(client):
+    params = {"date": "2017-08-02"}
+    first = client.get("/buildings/b1/forecast", params=params).json()
+    client.get("/buildings/b1/forecast", params=params)  # the same request again
+    with psycopg.connect(TEST_DB) as conn:
+        rows = conn.execute(
+            "SELECT forecast_kwh, lower_kwh, upper_kwh FROM forecasts "
+            "WHERE building_id = 'b1' AND ts >= '2017-08-02' AND ts < '2017-08-03' ORDER BY ts"
+        ).fetchall()
+    assert len(rows) == 24  # asking twice did not create duplicates
+    for (f, lo, up), h in zip(rows, first["hours"]):
+        assert f == pytest.approx(h["forecast_kwh"])
+        assert lo == pytest.approx(h["lower_kwh"])
+        assert up == pytest.approx(h["upper_kwh"])
+
+
+def test_forecast_is_still_served_if_recording_fails(client, monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError("database write failed")
+
+    monkeypatch.setattr(api, "record_forecast", boom)
+    r = client.get("/buildings/b1/forecast", params={"date": "2017-08-03"})
+    assert r.status_code == 200 and len(r.json()["hours"]) == 24

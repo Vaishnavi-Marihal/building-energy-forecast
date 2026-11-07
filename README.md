@@ -52,12 +52,12 @@ Every forecast is issued at 23:00 for the next day's 24 hours. Features use only
 - Baseline, interval and conformal tests with hand-checkable answers.
 - API tests for success, unknown building (404) and bad or out-of-range dates (422).
 - A database test: features built from the 8-day window read from PostgreSQL must equal the features built from the whole history, including days with masked (NULL) hours.
-- 45 tests in total. The 22 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 23 always run.
-- GitHub Actions starts a PostgreSQL 16 service and runs all 45 tests on Python 3.9 and 3.12, plus the frontend lint and build.
+- 47 tests in total. The 24 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 23 always run.
+- GitHub Actions starts a PostgreSQL 16 service and runs all 47 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
 
 ## Database
 
-Readings live in PostgreSQL, not in memory. `sql/schema.sql` defines two tables: `buildings` (id, site, the training-period mean load used as the scale) and `readings` (one row per building per hour; a masked hour is stored as NULL). The key `(building_id, ts)` also serves as the index, so a forecast request reads one building's 192 rows (the 7 days before the target day, plus the target day) instead of all 982,464.
+Readings live in PostgreSQL, not in memory. `sql/schema.sql` defines three tables: `buildings` (id, site, the training-period mean load used as the scale), `readings` (one row per building per hour; a masked hour is stored as NULL) and `forecasts` (every forecast the API has served, one row per building per hour, kept so the error can be checked against the real readings later; `load_db.py` recreates all tables, so it also clears the forecasts). The key `(building_id, ts)` also serves as the index, so a forecast request reads one building's 192 rows (the 7 days before the target day, plus the target day) instead of all 982,464.
 
 `src/load_db.py` fills both tables from `deploy/` and checks that, for every building, the SQL mean load before June 2017 equals the scale the model was trained with. Forecasts from this version were compared with the previous in-memory version on 280 building and date pairs, plus the error cases, and matched to within floating-point rounding (1e-9).
 
@@ -102,7 +102,7 @@ pip install -r requirements-dev.txt
 TEST_DATABASE_URL=postgresql://postgres:devpass@localhost:5432/energy_test python -m pytest tests -q
 ```
 
-Without `TEST_DATABASE_URL` the 22 database tests are skipped and 23 run.
+Without `TEST_DATABASE_URL` the 24 database tests are skipped and 23 run.
 
 ## Reproduce the results
 

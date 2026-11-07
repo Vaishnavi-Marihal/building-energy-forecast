@@ -1,6 +1,7 @@
 -- Database layout for the building energy forecast.
 -- DEV ONLY: the DROP lines wipe any existing data so the loader can be re-run.
 
+DROP TABLE IF EXISTS forecasts;
 DROP TABLE IF EXISTS readings;
 DROP TABLE IF EXISTS buildings;
 
@@ -18,5 +19,18 @@ CREATE TABLE readings (
     building_id TEXT             NOT NULL REFERENCES buildings (building_id),
     ts          TIMESTAMP        NOT NULL,
     kwh         DOUBLE PRECISION,
+    PRIMARY KEY (building_id, ts)
+);
+
+-- Every forecast the API has served, one row per building per target hour, in kWh.
+-- Monitoring joins this with `readings` once the real values exist. Serving the
+-- same hour again overwrites the row (the key is building + hour).
+CREATE TABLE forecasts (
+    building_id  TEXT             NOT NULL REFERENCES buildings (building_id),
+    ts           TIMESTAMP        NOT NULL,
+    forecast_kwh DOUBLE PRECISION NOT NULL,
+    lower_kwh    DOUBLE PRECISION NOT NULL,
+    upper_kwh    DOUBLE PRECISION NOT NULL,
+    served_at    TIMESTAMPTZ      NOT NULL DEFAULT now(),
     PRIMARY KEY (building_id, ts)
 );

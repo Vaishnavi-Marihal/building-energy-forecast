@@ -157,6 +157,20 @@ def buildings():
     return [{"id": b, "site_id": s} for b, s in rows]
 
 
+def record_forecast(building_id, hours):
+    """Remember what was served: one row per hour. The same building and hour is overwritten."""
+    rows = [(building_id, h.timestamp, h.forecast_kwh, h.lower_kwh, h.upper_kwh) for h in hours]
+    with state["pool"].connection() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(
+                """INSERT INTO forecasts (building_id, ts, forecast_kwh, lower_kwh, upper_kwh)
+                   VALUES (%s, %s, %s, %s, %s)
+                   ON CONFLICT (building_id, ts) DO UPDATE SET
+                       forecast_kwh = EXCLUDED.forecast_kwh, lower_kwh = EXCLUDED.lower_kwh,
+                       upper_kwh = EXCLUDED.upper_kwh, served_at = now()""",
+                rows)
+
+
 @app.get("/buildings/{building_id}/forecast", response_model=ForecastResponse)
 def forecast(building_id: str, date: dt.date = Query(..., description="YYYY-MM-DD")):
     with state["pool"].connection() as conn:
@@ -188,6 +202,11 @@ def forecast(building_id: str, date: dt.date = Query(..., description="YYYY-MM-D
     ) for ts, hz, p, lo, up, b168, b24, y in zip(
         day.index, day["horizon"], pred, lower, upper,
         day["lag168"], day["lag24"], day["y"])]
+
+    try:
+        record_forecast(building_id, hours)
+    except Exception:  # keeping a record must never stop the forecast from being served
+        log.exception("forecast_log_failed", extra={"fields": {"building": building_id}})
 
     start = pd.Timestamp(date)
     return ForecastResponse(
