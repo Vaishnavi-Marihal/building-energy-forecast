@@ -63,6 +63,12 @@ Readings live in PostgreSQL, not in memory. `sql/schema.sql` defines three table
 
 `src/monitor.py` is a small monitoring report. It joins the stored forecasts with the real readings and, for each day, prints the median over buildings of (model error / error of the same hour last week) and the share of hours inside the prediction interval. It flags a day when the ratio is above 1 or the coverage is below 0.80 (limits I chose, not derived). The data is a replay of 2017, so the real readings already exist; this shows the mechanism, it is not live production monitoring.
 
+## What monitoring showed
+
+I replayed forecasts for all 56 buildings on every fourth day from 2 July to 29 December 2017 (46 days, 2,576 forecasts) through the API, then ran `src/monitor.py` on the stored forecasts. Three days were flagged: 4 September, 23 November and 25 December. On all three, the median ratio to last week's value stayed below 1 (0.92, 0.68 and 0.70), so the model still beat last week's value. What fell short was interval coverage (0.77, 0.74 and 0.74, against the 0.90 the intervals are meant to reach and my flag limit of 0.80).
+
+These three dates are US public holidays (Labor Day, Thanksgiving, Christmas Day), and the model has no holiday information, only the hour, weekday and month. I have not tested whether holidays are the cause. Because I sampled every fourth day, other holidays may not have been checked. The data is a replay of 2017, so this shows how the monitoring works, not live production monitoring.
+
 ## Data and cleaning
 
 Source: Building Data Genome Project 2 (1,636 buildings, hourly, 2016 to 2017). 1,578 have an electricity meter. I used the Education category (604 buildings, 15 sites). An hour counts as "dead" if the reading is zero or missing. Dead stretches longer than 168 hours were masked (not scored, not used). A building was kept if at most 5% of July–December 2017 and at most 50% of all hours were masked: 535 buildings. I then sampled up to 4 per site, giving 56 buildings from 14 sites.
@@ -112,7 +118,7 @@ With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python s
 
 ## Layout
 
-`src/` Python code (cleaning, features, baselines, uncertainty, API, database loader) · `sql/` database schema · `tests/` · `notebooks/` data audit scripts · `frontend/` React + TypeScript dashboard · `deploy/` demo data, trained models and data notice · `Dockerfile` · `compose.yaml`
+`src/` Python code (cleaning, features, baselines, uncertainty, API, database loader, logging, monitoring report, unseen-sites evaluation) · `sql/` database schema · `tests/` · `notebooks/` data audit scripts · `frontend/` React + TypeScript dashboard · `deploy/` demo data, trained models and data notice · `Dockerfile` · `compose.yaml`
 
 ## Data attribution
 
