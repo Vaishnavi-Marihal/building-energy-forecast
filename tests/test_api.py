@@ -187,3 +187,15 @@ def test_forecast_is_still_served_if_recording_fails(client, monkeypatch):
     monkeypatch.setattr(api, "record_forecast", boom)
     r = client.get("/buildings/b1/forecast", params={"date": "2017-08-03"})
     assert r.status_code == 200 and len(r.json()["hours"]) == 24
+
+
+def test_monitor_report_covers_the_forecasts_that_were_served(client):
+    import monitor
+    for b in ("b1", "b2"):
+        r = client.get(f"/buildings/{b}/forecast", params={"date": "2017-08-10"})
+        assert r.status_code == 200
+    with psycopg.connect(TEST_DB) as conn:
+        rows = conn.execute(monitor.QUERY).fetchall()
+    days = [d for d in monitor.summarise(rows) if str(d["day"]) == "2017-08-10"]
+    assert len(days) == 1 and days[0]["buildings"] == 2
+    assert 0.0 <= days[0]["coverage"] <= 1.0
