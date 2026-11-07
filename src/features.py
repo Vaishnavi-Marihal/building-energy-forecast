@@ -1,8 +1,22 @@
+import numpy as np
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
 
 FEATURES = ["lag24", "lag48", "lag168", "dmean", "dmin", "dmax",
             "last", "horizon", "dow", "month"]
 WEATHER = ["temp", "temp_dmean"]
+
+# The deployed model uses the base features plus a US-federal-holiday flag. The research
+# scripts (backtests, weather, unseen sites) keep using FEATURES, so their results stay reproducible.
+DEPLOYED_FEATURES = FEATURES + ["is_holiday"]
+
+# US federal holidays (observed dates), computed once; the range is wide so any window works.
+_HOLIDAYS = USFederalHolidayCalendar().holidays(start="2010-01-01", end="2035-12-31")
+
+
+def holiday_flag(index):
+    """1 for every hour on a US federal holiday (observed date), else 0. Depends on the date only."""
+    return np.asarray(index.normalize().isin(_HOLIDAYS), dtype=int)
 
 
 def _daily_to_hourly(daily, index):
@@ -46,6 +60,7 @@ def build_features(df, scale, temp=None):
             "horizon": z.index.hour + 1,
             "dow": z.index.dayofweek,
             "month": z.index.month,
+            "is_holiday": holiday_flag(z.index),
         }
         if temp is not None:
             d["temp"] = temp[b]

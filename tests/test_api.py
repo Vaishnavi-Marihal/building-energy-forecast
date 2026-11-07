@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from psycopg.conninfo import conninfo_to_dict
 
 import api
-from features import build_features, FEATURES
+from features import build_features, DEPLOYED_FEATURES
 
 # These tests need a PostgreSQL database. Point TEST_DATABASE_URL at an EMPTY
 # test database (its name must end in "_test": the schema script drops tables).
@@ -44,7 +44,7 @@ def env(tmp_path_factory):
     for name in ("point", "lo", "hi"):
         m = lgb.LGBMRegressor(n_estimators=20, min_child_samples=20,
                               verbose=-1, random_state=0)
-        m.fit(feat[FEATURES], feat["y"])
+        m.fit(feat[DEPLOYED_FEATURES], feat["y"])
         m.booster_.save_model(str(tmp / f"{name}.txt"))
     meta = {"scale": {c: float(scale[c]) for c in df.columns},
             "Q": 0.1, "alpha": 0.1, "train_end": "2017-05-31 23:00",
@@ -139,12 +139,12 @@ def test_summary(client):
 
 
 @pytest.mark.parametrize("building", ["b1", "b2"])
-@pytest.mark.parametrize("day", ["2017-07-01", "2017-07-10", "2017-07-17", "2017-09-15",
+@pytest.mark.parametrize("day", ["2017-07-01", "2017-07-10", "2017-07-04", "2017-07-17", "2017-09-15",
                                  "2017-12-31"])
 def test_window_features_match_full_history(env, building, day):
     """Features from the 8-day database window must equal the features computed
     from the whole history. 2017-07-10 has masked (NULL) target hours and
-    2017-07-17 has last-week values that are NULL."""
+    2017-07-17 has last-week values that are NULL. 2017-07-04 is a federal holiday."""
     full = build_features(env["df"], env["scale"])
     first = pd.Timestamp(day)
     expected = (full[full["building"] == building].drop(columns="building")
@@ -152,7 +152,7 @@ def test_window_features_match_full_history(env, building, day):
     with api.state["pool"].connection() as conn:
         got = api.features_for_day(conn, building, float(env["scale"][building]),
                                    dt.date.fromisoformat(day))
-    cols = FEATURES + ["y"]
+    cols = DEPLOYED_FEATURES + ["y"]
     pd.testing.assert_frame_equal(expected[cols], got[cols], check_freq=False,
                                   check_names=False, atol=1e-12, rtol=0)
 
