@@ -1,0 +1,38 @@
+{
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "holiday_days_in_test": 6,
+  "results": [
+    {
+      "group": "holiday days",
+      "variant": "with holiday flag",
+      "median": 0.637,
+      "lowest": 0.626,
+      "highest": 0.64
+    },
+    {
+      "group": "holiday days",
+      "variant": "without holiday flag",
+      "median": 0.801,
+      "lowest": 0.801,
+      "highest": 0.81
+    },
+    {
+      "group": "other days",
+      "variant": "with holiday flag",
+      "median": 0.668,
+      "lowest": 0.668,
+      "highest": 0.671
+    },
+    {
+      "group": "other days",
+      "variant": "without holiday flag",
+      "median": 0.671,
+      "lowest": 0.667,
+      "highest": 0.675
+    }
+  ]
+}
