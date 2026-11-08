@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16
+    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
       POSTGRES_DB: energy
@@ -24,6 +25,7 @@ services:
 
   app:
     build: .
+    restart: unless-stopped
     ports:
       - "8080:8000"
     environment:
