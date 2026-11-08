@@ -52,8 +52,8 @@ Every forecast is issued at 23:00 for the next day's 24 hours. Features use only
 - Baseline, interval and conformal tests with hand-checkable answers.
 - API tests for success, unknown building (404) and bad or out-of-range dates (422).
 - A database test: features built from the 8-day window read from PostgreSQL must equal the features built from the whole history, including days with masked (NULL) hours.
-- 61 tests in total. The 27 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 34 always run.
-- GitHub Actions starts a PostgreSQL 16 service and runs all 61 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
+- 63 tests in total. The 27 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 36 always run.
+- GitHub Actions starts a PostgreSQL 16 service and runs all 63 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
 
 ## Database
 
@@ -93,7 +93,7 @@ Source: Building Data Genome Project 2 (1,636 buildings, hourly, 2016 to 2017). 
 - **My first zero-run check undercounted.** It counted only exact zeros, so a missing hour split a dead stretch in two. Counting "zero or missing" doubled the number of Education buildings with a dead stretch over a week (103 to 206).
 - **Healthcare was not an option.** The category exists (27 buildings with electricity, 6 sites), but only 13 passed a simple quality filter, so I chose Education.
 - **Dead stretches are mostly a site problem.** Panther, Shrew, Cockatoo, Bobcat, Gator and Crow show site-wide dead periods. For Lamb and Eagle my test found none, but it could not rule out shared events affecting under half of a site's buildings, so that question stays open.
-- **Weather did not help.** Observed air temperature, and temperature with simulated forecast error (1, 2 and 3 °C), all stayed within about ±0.2% of the no-weather model. I used one random seed, so differences this small cannot be separated from noise. Weather is not in the final model.
+- **Weather did not help.** I repeated the comparison with three random seeds (July to December 2017). Observed air temperature, and temperature with simulated forecast error (1, 2 and 3 °C), changed the error by between −1.0% and +0.3% compared with the no-weather model of the same seed, and in every scenario some seeds were better and some worse. I had decided beforehand that I would call it a gain only if all three seeds improved by more than 1%; none did. The no-weather model alone differs by about 0.4% between seeds. Weather is not in the final model. Results are in `docs/weather_seeds.json`; run `python src/experiment_weather_seeds.py`.
 - **The raw quantile ranges under-covered** (85.6% to 90.0% per month). Conformal calibration raised that to 87.5% to 91.3%, still slightly below 90% in some months.
 - **Hosting:** as of October 2026, Hugging Face Docker Spaces required a paid plan, so I used Render's free tier.
 
@@ -125,7 +125,7 @@ pip install -r requirements-dev.txt
 TEST_DATABASE_URL=postgresql://postgres:devpass@localhost:5432/energy_test python -m pytest tests -q
 ```
 
-Without `TEST_DATABASE_URL` the 27 database tests are skipped and 34 run.
+Without `TEST_DATABASE_URL` the 27 database tests are skipped and 36 run.
 
 ## Deploying on AWS
 
@@ -142,7 +142,7 @@ What this does not cover: there is no HTTPS or domain name, the address changes 
 
 ## Reproduce the results
 
-With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python src/backtest_baselines.py`, `python src/backtest_model.py`, `python src/backtest_intervals.py`, `python src/backtest_weather.py`, `python src/train_final.py` (it writes `artifacts/`; copy its five files into `deploy/model/` to update the demo model). `python src/backtest_unseen_sites.py`, `python src/experiment_holiday.py` and `python src/experiment_holiday_intervals.py` reproduce the unseen-sites and holiday results.
+With BDG2 downloaded, run in this order: `python src/prepare_data.py`, `python src/backtest_baselines.py`, `python src/backtest_model.py`, `python src/backtest_intervals.py`, `python src/backtest_weather.py`, `python src/train_final.py` (it writes `artifacts/`; copy its five files into `deploy/model/` to update the demo model). `python src/backtest_unseen_sites.py`, `python src/experiment_holiday.py`, `python src/experiment_holiday_intervals.py` and `python src/experiment_weather_seeds.py` reproduce the unseen-sites, holiday and weather-seed results.
 
 ## Layout
 

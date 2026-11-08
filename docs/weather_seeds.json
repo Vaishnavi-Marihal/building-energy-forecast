@@ -1,0 +1,70 @@
+{
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "months": [
+    "2017-07",
+    "2017-08",
+    "2017-09",
+    "2017-10",
+    "2017-11",
+    "2017-12"
+  ],
+  "per_seed": {
+    "0": {
+      "none": 0.0709,
+      "oracle": 0.07098,
+      "sim_1C": 0.07073,
+      "sim_2C": 0.07079,
+      "sim_3C": 0.071
+    },
+    "1": {
+      "none": 0.07096,
+      "oracle": 0.07104,
+      "sim_1C": 0.071,
+      "sim_2C": 0.07111,
+      "sim_3C": 0.07119
+    },
+    "2": {
+      "none": 0.07121,
+      "oracle": 0.07082,
+      "sim_1C": 0.07122,
+      "sim_2C": 0.07047,
+      "sim_3C": 0.07093
+    }
+  },
+  "summary": {
+    "none": {
+      "nMAE_median": 0.071,
+      "change_median_pct": 0.0,
+      "change_lowest_pct": 0.0,
+      "change_highest_pct": 0.0
+    },
+    "oracle": {
+      "nMAE_median": 0.071,
+      "change_median_pct": 0.1017,
+      "change_lowest_pct": -0.5441,
+      "change_highest_pct": 0.1171
+    },
+    "sim_1C": {
+      "nMAE_median": 0.071,
+      "change_median_pct": 0.0189,
+      "change_lowest_pct": -0.2457,
+      "change_highest_pct": 0.0492
+    },
+    "sim_2C": {
+      "nMAE_median": 0.0708,
+      "change_median_pct": -0.1603,
+      "change_lowest_pct": -1.0382,
+      "change_highest_pct": 0.2071
+    },
+    "sim_3C": {
+      "nMAE_median": 0.071,
+      "change_median_pct": 0.1405,
+      "change_lowest_pct": -0.3947,
+      "change_highest_pct": 0.3232
+    }
+  }
+}
