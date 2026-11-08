@@ -2,7 +2,7 @@
 
 Day-ahead hourly electricity forecasts for 56 school buildings, with 90% prediction ranges, evaluated by forward-in-time backtests against "same hour last week" and "same hour yesterday" baselines.
 
-**Live demo:** https://building-energy-forecast.onrender.com
+**Live demo:** http://13.51.206.202:8080 (current version, on AWS; plain HTTP, and it will go offline when my AWS free plan ends, by 7 May 2027 at the latest). An older version, without the database, is still at https://building-energy-forecast.onrender.com
 (Free hosting: the first visit after 15 minutes of inactivity can take about a minute to wake up.)
 
 ![Dashboard](docs/dashboard.png)
@@ -126,6 +126,19 @@ TEST_DATABASE_URL=postgresql://postgres:devpass@localhost:5432/energy_test pytho
 ```
 
 Without `TEST_DATABASE_URL` the 27 database tests are skipped and 34 run.
+
+## Deploying on AWS
+
+The demo above runs the same `compose.yaml` as the local setup, on one AWS EC2 server (t3.micro, Ubuntu 26.04, Stockholm region, AWS free plan).
+
+1. Launch the instance with 20 GiB of storage. The firewall allows SSH (port 22) only from my own IP address and the app (port 8080) from anywhere.
+2. Install Docker, Docker Compose and git, and add 2 GB of swap space (the server has 1 GB of memory).
+3. Clone this repository, put a random database password in a `.env` file (`POSTGRES_PASSWORD=...`; it is not in the repository), and run `docker compose up -d --build`.
+4. `restart: unless-stopped` on the database and app means they start again after a reboot; I tested this by rebooting the server.
+
+To update it: `git pull` and `docker compose up -d --build` on the server.
+
+What this does not cover: there is no HTTPS or domain name, the address changes if the server is stopped and started, I deploy by hand (no automatic deploy from CI), there are no database backups, and one small server cannot handle many users at once.
 
 ## Reproduce the results
 
