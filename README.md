@@ -53,7 +53,7 @@ Every forecast is issued at 23:00 for the next day's 24 hours. Features use only
 - API tests for success, unknown building (404) and bad or out-of-range dates (422).
 - A database test: features built from the 8-day window read from PostgreSQL must equal the features built from the whole history, including days with masked (NULL) hours.
 - 63 tests in total. The 27 that need a database run only when `TEST_DATABASE_URL` is set (the database name must end in `_test`, because the tests rebuild its tables); the other 36 always run.
-- GitHub Actions starts a PostgreSQL 16 service and runs all 63 tests on Python 3.9 and 3.12, plus the frontend lint, its 4 tests and the build.
+- GitHub Actions starts a PostgreSQL 16 service and runs all 63 tests on Python 3.9 and 3.12, plus the frontend lint, its 7 tests and the build.
 
 ## Database
 
